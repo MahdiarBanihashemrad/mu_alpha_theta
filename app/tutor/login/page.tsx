@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function TutorLoginPage() {
-  const [sNumber, setSNumber] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export default function TutorLoginPage() {
   async function submit(event: FormEvent) {
     event.preventDefault(); setLoading(true); setError("");
     try {
-      const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sNumber, password }) });
+      const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
       const result = await response.json() as { error?: string; redirectTo?: string };
       if (!response.ok) throw new Error(result.error || "Could not sign in.");
       window.location.assign(result.redirectTo || "/tutor");
@@ -33,10 +33,10 @@ export default function TutorLoginPage() {
         <span className="auth-icon"><Glasses /></span>
         <p className="card-kicker">Tutor View</p>
         <h1>Welcome back.</h1>
-        <p>Sign in with the S-number and temporary or personal password connected to your tutor account.</p>
+        <p>Sign in with the username and temporary or personal password connected to your tutor account.</p>
         <form onSubmit={submit}>
-          <label htmlFor="s-number">S-number</label>
-          <Input id="s-number" autoComplete="username" placeholder="S123456" value={sNumber} onChange={(event) => setSNumber(event.target.value)} />
+          <label htmlFor="username">Username</label>
+          <Input id="username" autoComplete="username" placeholder="jordan.lee" value={username} onChange={(event) => setUsername(event.target.value)} />
           <label htmlFor="password">Password</label>
           <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
           {error && <p className="form-error" role="alert">{error}</p>}

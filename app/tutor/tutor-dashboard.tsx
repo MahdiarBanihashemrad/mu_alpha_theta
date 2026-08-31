@@ -15,7 +15,7 @@ type RequestItem = {
   contact_preference?: string; notes: string | null; assigned_tutor_id: string | null; officer_notes?: string | null;
   created_at: string; assigned_tutor?: { id: string; full_name: string } | null;
 };
-type TutorOption = { id: string; full_name: string; s_number: string; subjects: string[]; role: string };
+type TutorOption = { id: string; full_name: string; username: string; subjects: string[]; role: string };
 
 const statusLabels: Record<string, string> = { pending: "Pending", assigned: "Tutor assigned", confirmed: "Confirmed", completed: "Completed", declined: "Declined" };
 
@@ -83,7 +83,7 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
           {selected.notes && <div className="student-notes"><strong>Student’s note</strong><p>{selected.notes}</p></div>}
           <div className="officer-fields">
             <label>Status<Select value={selected.status} onValueChange={(value) => updateLocal("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(isStaff ? Object.entries(statusLabels) : Object.entries(statusLabels).filter(([value]) => ["confirmed", "completed"].includes(value))).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></label>
-            {isStaff && <label>Assigned tutor<Select value={selected.assigned_tutor_id || "unassigned"} onValueChange={(value) => updateLocal("assigned_tutor_id", value === "unassigned" ? null : value)}><SelectTrigger><SelectValue placeholder="Choose a tutor" /></SelectTrigger><SelectContent><SelectItem value="unassigned">Unassigned</SelectItem>{tutors.map((tutor) => <SelectItem key={tutor.id} value={tutor.id}>{tutor.full_name} · {tutor.s_number}</SelectItem>)}</SelectContent></Select></label>}
+            {isStaff && <label>Assigned tutor<Select value={selected.assigned_tutor_id || "unassigned"} onValueChange={(value) => updateLocal("assigned_tutor_id", value === "unassigned" ? null : value)}><SelectTrigger><SelectValue placeholder="Choose a tutor" /></SelectTrigger><SelectContent><SelectItem value="unassigned">Unassigned</SelectItem>{tutors.map((tutor) => <SelectItem key={tutor.id} value={tutor.id}>{tutor.full_name} · @{tutor.username}</SelectItem>)}</SelectContent></Select></label>}
             {isStaff && <label>Officer notes<Textarea value={selected.officer_notes || ""} onChange={(event) => updateLocal("officer_notes", event.target.value)} /></label>}
             {error && <p className="form-error">{error}</p>}<Button className="nav-cta" onClick={() => void saveSelected()} disabled={saving}>{saving ? "Saving…" : <><Check /> Save session</>}</Button>
           </div>

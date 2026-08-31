@@ -16,7 +16,7 @@ export async function GET() {
 
   let tutors: unknown[] = [];
   if (profile.role !== "tutor") {
-    const result = await admin.from("profiles").select("id,full_name,s_number,subjects,role").eq("active", true).order("full_name");
+    const result = await admin.from("profiles").select("id,full_name,username,subjects,role").eq("active", true).order("full_name");
     tutors = result.data || [];
   }
   return Response.json({ requests, tutors, role: profile.role });

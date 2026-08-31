@@ -17,9 +17,9 @@ After the migration:
 1. In Supabase, open **Authentication → Users → Add user**.
 2. Create the first administrator with their school email and a unique temporary password.
 3. Open `supabase/bootstrap-admin.sql.example`, replace every placeholder, and run the completed statement in the Supabase SQL Editor.
-4. Sign in through `/tutor/login` with the administrator's S-number and temporary password.
+4. Sign in through `/tutor/login` with the administrator's username and temporary password.
 5. Replace the temporary password when prompted.
 
 The administrator can then add tutors and officers from **Tutor View → Manage tutors**.
 
-Never commit `.env.local`, a Supabase secret key, S-numbers, or temporary passwords.
+Never commit `.env.local`, a Supabase secret key, private tutor data, or temporary passwords.

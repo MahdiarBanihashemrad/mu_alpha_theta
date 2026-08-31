@@ -3,11 +3,11 @@
 -- Replace every placeholder before running it in the SQL Editor.
 
 insert into public.profiles (
-  id, s_number, full_name, school_email, login_email, role, subjects, active, must_change_password
+  id, username, full_name, school_email, login_email, role, subjects, active, must_change_password
 )
 select
   id,
-  'S000000',
+  'your.username',
   'YOUR FULL NAME',
   'YOUR_SCHOOL_EMAIL@austinisd.org',
   email,
