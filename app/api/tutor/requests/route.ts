@@ -37,12 +37,13 @@ export async function PATCH(request: Request) {
     if (!["confirmed", "completed"].includes(status)) return Response.json({ error: "Tutors can only confirm or complete assigned sessions." }, { status: 403 });
     const { data: existing } = await admin.from("tutoring_requests").select("assigned_tutor_id").eq("id", id).maybeSingle();
     if (existing?.assigned_tutor_id !== profile.id) return Response.json({ error: "Not authorized" }, { status: 403 });
-    const { error } = await admin.from("tutoring_requests").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error) return Response.json({ error: "Could not save request." }, { status: 500 });
+    const { data: updated, error } = await admin.from("tutoring_requests").update({ status, updated_at: new Date().toISOString() }).eq("id", id).select("id,status,assigned_tutor_id,updated_at").maybeSingle();
+    if (error || !updated) return Response.json({ error: "Could not confirm that the request was saved." }, { status: 500 });
+    return Response.json({ ok: true, request: updated });
   } else {
     const nextStatus = assignedTutorId && status === "pending" ? "assigned" : status;
-    const { error } = await admin.from("tutoring_requests").update({ status: nextStatus, assigned_tutor_id: assignedTutorId, officer_notes: officerNotes || null, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error) return Response.json({ error: "Could not save request." }, { status: 500 });
+    const { data: updated, error } = await admin.from("tutoring_requests").update({ status: nextStatus, assigned_tutor_id: assignedTutorId, officer_notes: officerNotes || null, updated_at: new Date().toISOString() }).eq("id", id).select("id,status,assigned_tutor_id,officer_notes,updated_at").maybeSingle();
+    if (error || !updated) return Response.json({ error: "Could not confirm that the request was saved." }, { status: 500 });
+    return Response.json({ ok: true, request: updated });
   }
-  return Response.json({ ok: true });
 }
