@@ -109,3 +109,20 @@ export async function PATCH(request: Request) {
   if (error) return Response.json({ error: error.message || "Could not update account." }, { status: 400 });
   return Response.json({ ok: true, password_reset: Boolean(temporaryPassword) });
 }
+
+export async function DELETE(request: Request) {
+  const requester = await getCurrentProfile();
+  if (requester?.role !== "admin" || !requester.active) return Response.json({ error: "Administrator access required." }, { status: 403 });
+  const body = await request.json() as Record<string, unknown>;
+  const id = typeof body.id === "string" ? body.id : "";
+  if (!id) return Response.json({ error: "Choose a tutor account to delete." }, { status: 400 });
+  if (id === requester.id) return Response.json({ error: "You cannot delete your own administrator account." }, { status: 400 });
+
+  const admin = createSupabaseAdminClient();
+  const { data: tutor, error: loadError } = await admin.from("profiles").select("id,full_name").eq("id", id).maybeSingle();
+  if (loadError || !tutor) return Response.json({ error: "Tutor account not found." }, { status: 404 });
+
+  const { error } = await admin.auth.admin.deleteUser(id);
+  if (error) return Response.json({ error: error.message || "Could not delete this account." }, { status: 400 });
+  return Response.json({ ok: true, deleted: { id: tutor.id, full_name: tutor.full_name } });
+}
