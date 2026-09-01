@@ -460,15 +460,21 @@ button, input, select, textarea { font: inherit; }
 .manage-shell > header > p:last-child { color: var(--muted-ink); }
 .manage-grid { display: grid; margin-top: 38px; grid-template-columns: minmax(340px, .8fr) minmax(520px, 1.2fr); gap: 18px; align-items: start; }
 .create-tutor-card, .tutor-roster-card { padding: 28px; border: 1px solid var(--line); border-radius: 25px; background: var(--paper); box-shadow: 0 18px 55px rgba(67, 34, 28, .06); }
-.create-tutor-card { display: grid; gap: 11px; }.create-tutor-card h2, .tutor-roster-card h2 { margin: 0; font-size: 20px; }.create-tutor-card > label, .create-tutor-card .field-pair label { display: grid; gap: 7px; font-size: 12px; font-weight: 750; }
+.create-tutor-card { display: grid; gap: 11px; }.create-tutor-card h2, .tutor-roster-card h2 { margin: 0; font-size: 20px; }.create-tutor-card > label, .create-tutor-card .field-pair label { display: grid; gap: 7px; font-size: 12px; font-weight: 750; }.create-tutor-card label span { color: var(--muted-ink); font-size: 10px; font-weight: 500; }
+.account-note { margin: -4px 0 2px; color: var(--muted-ink); font-size: 10px; line-height: 1.5; }
 .subject-checks { display: grid; margin: 8px 0; padding: 14px; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px solid var(--line); border-radius: 15px; }
 .subject-checks legend { padding: 0 4px; font-size: 12px; font-weight: 750; }.subject-checks label { display: flex; align-items: center; gap: 7px; color: #5c5550; font-size: 11px; }
 .roster-heading { display: flex; align-items: center; justify-content: space-between; }.roster-heading p { margin: 4px 0 0; color: var(--muted-ink); font-size: 11px; }
 .tutor-roster { display: grid; margin-top: 18px; }
-.tutor-roster article { display: grid; padding: 15px 0; grid-template-columns: auto minmax(180px, 1fr) 130px auto; align-items: center; gap: 12px; border-top: 1px solid #ece6df; }
+.tutor-roster article { display: grid; padding: 15px 0; grid-template-columns: auto minmax(150px, 1fr) 120px auto auto; align-items: center; gap: 10px; border-top: 1px solid #ece6df; }
 .tutor-roster article.inactive { opacity: .55; }.roster-avatar { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; background: #f0e5e7; color: var(--maroon); }.roster-avatar svg { width: 18px; }
 .tutor-roster strong, .tutor-roster small, .tutor-roster em { display: block; }.tutor-roster small { margin-top: 3px; color: var(--muted-ink); font-size: 10px; }.tutor-roster em { margin-top: 4px; color: #8a5b18; font-size: 9px; font-style: normal; font-weight: 750; }
 .status-toggle { border: 0; background: transparent; color: var(--maroon); font-size: 10px; font-weight: 800; cursor: pointer; }
+.roster-message { margin-top: 14px; }
+.tutor-editor { max-height: min(90vh, 780px); max-width: 680px !important; overflow-y: auto; border-radius: 24px !important; background: #fffdf9 !important; }
+.tutor-editor-form { display: grid; gap: 14px; }.tutor-editor-form label { display: grid; gap: 7px; color: var(--ink); font-size: 12px; font-weight: 750; }.tutor-editor-form label span { color: var(--muted-ink); font-size: 10px; font-weight: 500; }
+.password-reset-label { padding: 15px; grid-template-columns: auto 1fr !important; align-items: center; border: 1px solid var(--line); border-radius: 15px; }.password-reset-label > span { justify-self: end; }.password-reset-label input { grid-column: 1 / -1; }.password-reset-label svg { width: 16px; color: var(--maroon); }
+.active-account { display: flex !important; align-items: center; gap: 8px !important; }
 
 @media (max-width: 900px) {
   .nav-links { display: none; }
@@ -518,5 +524,6 @@ button, input, select, textarea { font: inherit; }
   .detail-heading { flex-direction: column; }
   .auth-card { padding: 28px 22px; }.auth-back { top: 16px; left: 16px; }
   .manage-shell { padding: 30px 14px; }.tutor-roster article { grid-template-columns: auto 1fr; }.tutor-roster article > div + div, .tutor-roster article > button, .tutor-roster article > [role="combobox"] { grid-column: 2; }
+  .tutor-editor { max-width: calc(100% - 20px) !important; }.password-reset-label { grid-template-columns: auto 1fr !important; }.password-reset-label > span { grid-column: 1 / -1; justify-self: start; }
   .subject-checks { grid-template-columns: 1fr; }
 }
