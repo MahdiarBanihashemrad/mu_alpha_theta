@@ -1,0 +1,19 @@
+-- Run this only after creating your first administrator in
+-- Supabase Dashboard > Authentication > Users > Add user.
+-- Replace every placeholder before running it in the SQL Editor.
+
+insert into public.profiles (
+  id, username, full_name, school_email, login_email, role, subjects, active, must_change_password
+)
+select
+  id,
+  'your.username',
+  'YOUR FULL NAME',
+  'YOUR_SCHOOL_EMAIL@austinisd.org',
+  email,
+  'admin',
+  '{}',
+  true,
+  true
+from auth.users
+where email = 'YOUR_SCHOOL_EMAIL@austinisd.org';
