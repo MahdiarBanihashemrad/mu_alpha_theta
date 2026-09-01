@@ -35,8 +35,13 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
       const response = await fetch("/api/tutor/requests", { cache: "no-store" });
       const result = await response.json() as { requests?: RequestItem[]; tutors?: TutorOption[]; error?: string };
       if (!response.ok) throw new Error(result.error || "Could not load sessions.");
-      setRequests(result.requests || []); setTutors(result.tutors || []);
-      setSelectedId((current) => current || result.requests?.[0]?.id || null);
+      const nextRequests = result.requests || [];
+      setRequests(nextRequests); setTutors(result.tutors || []);
+      setSelectedId((current) => {
+        const currentRequest = nextRequests.find((item) => item.id === current);
+        if (currentRequest && !["completed", "declined"].includes(currentRequest.status)) return current;
+        return nextRequests.find((item) => !["completed", "declined"].includes(item.status))?.id || null;
+      });
     } catch (loadError) { setError(loadError instanceof Error ? loadError.message : "Could not load sessions."); }
     finally { setLoading(false); }
   }, []);
@@ -49,6 +54,26 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
   const visible = useMemo(() => requests.filter((item) => filter === "all" || (filter === "active" ? !["completed", "declined"].includes(item.status) : item.status === filter)), [requests, filter]);
   const selected = requests.find((item) => item.id === selectedId) || null;
   const updateLocal = (field: keyof RequestItem, value: string | null) => setRequests((current) => current.map((item) => item.id === selectedId ? { ...item, [field]: value } : item));
+
+  async function changeStatus(status: string) {
+    if (!selected || status === selected.status) return;
+    setSaving(true); setError("");
+    try {
+      const response = await fetch("/api/tutor/requests", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selected.id, status, assignedTutorId: selected.assigned_tutor_id, officerNotes: selected.officer_notes }),
+      });
+      const result = await response.json() as { request?: Pick<RequestItem, "status">; error?: string };
+      if (!response.ok || !result.request) throw new Error(result.error || "Could not save this status.");
+      setRequests((current) => current.map((item) => item.id === selected.id ? { ...item, status: result.request?.status || status } : item));
+      setSelectedId(null);
+      await loadRequests();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save this status.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function saveSelected() {
     if (!selected) return;
@@ -82,7 +107,7 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
           {isStaff && (selected.email || selected.phone) && <div className="contact-card">{selected.email && <a href={`mailto:${selected.email}`}><Mail />{selected.email}</a>}{selected.phone && <a href={`tel:${selected.phone}`}><Phone />{selected.phone}</a>}<small>Prefers {selected.contact_preference}</small></div>}
           {selected.notes && <div className="student-notes"><strong>Student’s note</strong><p>{selected.notes}</p></div>}
           <div className="officer-fields">
-            <label>Status<Select value={selected.status} onValueChange={(value) => updateLocal("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(isStaff ? Object.entries(statusLabels) : Object.entries(statusLabels).filter(([value]) => ["confirmed", "completed"].includes(value))).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></label>
+            <label>Status<Select value={selected.status} onValueChange={(value) => void changeStatus(value)} disabled={saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(isStaff ? Object.entries(statusLabels) : Object.entries(statusLabels).filter(([value]) => ["confirmed", "completed"].includes(value))).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></label>
             {isStaff && <label>Assigned tutor<Select value={selected.assigned_tutor_id || "unassigned"} onValueChange={(value) => updateLocal("assigned_tutor_id", value === "unassigned" ? null : value)}><SelectTrigger><SelectValue placeholder="Choose a tutor" /></SelectTrigger><SelectContent><SelectItem value="unassigned">Unassigned</SelectItem>{tutors.map((tutor) => <SelectItem key={tutor.id} value={tutor.id}>{tutor.full_name} · @{tutor.username}</SelectItem>)}</SelectContent></Select></label>}
             {isStaff && <label>Officer notes<Textarea value={selected.officer_notes || ""} onChange={(event) => updateLocal("officer_notes", event.target.value)} /></label>}
             {error && <p className="form-error">{error}</p>}<Button className="nav-cta" onClick={() => void saveSelected()} disabled={saving}>{saving ? "Saving…" : <><Check /> Save session</>}</Button>

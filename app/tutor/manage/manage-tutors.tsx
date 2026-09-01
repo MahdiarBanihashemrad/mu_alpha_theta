@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowLeft, KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,11 +32,13 @@ export default function ManageTutors() {
   const [form, setForm] = useState({ fullName: "", username: "", schoolEmail: "", role: "tutor", temporaryPassword: "", subjects: [] as string[] });
   const [editing, setEditing] = useState<Tutor | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [deleting, setDeleting] = useState<Tutor | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingSaving, setEditingSaving] = useState(false);
+  const [deletingSaving, setDeletingSaving] = useState(false);
 
   const loadTutors = useCallback(async () => {
     setLoading(true); setError("");
@@ -114,6 +116,30 @@ export default function ManageTutors() {
     }
   }
 
+  function askToDelete(tutor: Tutor) {
+    setEditing(null); setEditForm(null); setDeleting(tutor); setError(""); setMessage("");
+  }
+
+  async function deleteTutor() {
+    if (!deleting) return;
+    setDeletingSaving(true); setError(""); setMessage("");
+    try {
+      const response = await fetch("/api/admin/tutors", {
+        method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: deleting.id }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Could not delete this account.");
+      const deletedName = deleting.full_name;
+      setDeleting(null);
+      setMessage(`${deletedName}'s account was permanently deleted.`);
+      await loadTutors();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete this account.");
+    } finally {
+      setDeletingSaving(false);
+    }
+  }
+
   return (
     <main className="manage-shell">
       <header>
@@ -173,9 +199,17 @@ export default function ManageTutors() {
               <label className="password-reset-label"><KeyRound /> New temporary password <span>(leave blank to keep current password)</span><Input type="password" autoComplete="new-password" value={editForm.temporaryPassword} onChange={(event) => setEditForm({ ...editForm, temporaryPassword: event.target.value })} /></label>
               <label className="active-account"><Checkbox checked={editForm.active} onCheckedChange={(checked) => setEditForm({ ...editForm, active: Boolean(checked) })} /> Account active</label>
               {error && <p className="form-error">{error}</p>}
-              <DialogFooter><Button type="button" variant="outline" onClick={() => { setEditing(null); setEditForm(null); }}>Cancel</Button><Button type="submit" className="nav-cta" disabled={editingSaving}>{editingSaving ? "Saving…" : "Save account"}</Button></DialogFooter>
+              <DialogFooter><Button type="button" variant="destructive" onClick={() => askToDelete(editing)}><Trash2 /> Delete account</Button><Button type="button" variant="outline" onClick={() => { setEditing(null); setEditForm(null); }}>Cancel</Button><Button type="submit" className="nav-cta" disabled={editingSaving}>{editingSaving ? "Saving…" : "Save account"}</Button></DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(deleting)} onOpenChange={(open) => { if (!open && !deletingSaving) setDeleting(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Permanently delete this account?</DialogTitle><DialogDescription>{deleting ? `${deleting.full_name} (@${deleting.username}) will immediately lose access. Their existing tutoring requests will remain, but will no longer be assigned to them. This cannot be undone.` : "This cannot be undone."}</DialogDescription></DialogHeader>
+          {error && <p className="form-error">{error}</p>}
+          <DialogFooter><Button type="button" variant="outline" onClick={() => setDeleting(null)} disabled={deletingSaving}>Cancel</Button><Button type="button" variant="destructive" onClick={() => void deleteTutor()} disabled={deletingSaving}>{deletingSaving ? "Deleting…" : <><Trash2 /> Delete permanently</>}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </main>
