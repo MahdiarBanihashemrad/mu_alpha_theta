@@ -204,7 +204,7 @@ export default function Home() {
     <main>
       <section className="hero-shell">
         <div className="utility-row">
-          <a className="tutor-view-link" href="/tutor"><Glasses aria-hidden="true" /> Tutor View</a>
+          <a className="tutor-view-link" href="/tutor/login"><Glasses aria-hidden="true" /> Tutor View</a>
         </div>
         <nav className="floating-nav" aria-label="Main navigation">
           <a className="brand" href="#top" aria-label="Mu Alpha Theta home">
