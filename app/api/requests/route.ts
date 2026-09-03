@@ -2,7 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const allowedSubjects = new Set(["Algebra I", "Geometry", "Algebra II", "AP Precalculus", "AP Calculus AB", "AP Calculus BC", "AP Statistics"]);
 const allowedDurations = new Set(["45 minutes", "60 minutes", "Other"]);
-const allowedTimes = new Set(["7:15 AM", "7:30 AM", "7:45 AM", "8:00 AM", "4:45 PM", "5:00 PM", "5:15 PM", "5:30 PM", "5:45 PM"]);
+const allowedTimes = new Set(["7:15 AM", "7:30 AM", "7:45 AM", "8:00 AM", "10:35 AM — FIT", "12:40 PM — Lunch", "4:45 PM", "5:00 PM", "5:15 PM", "5:30 PM", "5:45 PM"]);
 
 function clean(value: unknown, max = 300) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const body = await request.json() as Record<string, unknown>;
     const subject = clean(body.subject, 60);
     const preferredDate = clean(body.date, 10);
-    const preferredTime = clean(body.time, 12);
+    const preferredTime = clean(body.time, 30);
     const duration = clean(body.duration, 20);
     const selectedLocation = clean(body.location, 40);
     const location = selectedLocation === "Other" ? clean(body.otherLocation, 120) : selectedLocation;

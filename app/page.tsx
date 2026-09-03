@@ -39,6 +39,7 @@ function isWeekday(value: string) {
 
 const morning45 = ["7:15 AM", "7:30 AM", "7:45 AM", "8:00 AM"];
 const morning60 = ["7:15 AM", "7:30 AM", "7:45 AM"];
+const schoolDay = ["10:35 AM — FIT", "12:40 PM — Lunch"];
 const afternoon45 = ["4:45 PM", "5:00 PM", "5:15 PM", "5:30 PM", "5:45 PM"];
 const afternoon60 = ["4:45 PM", "5:00 PM", "5:15 PM", "5:30 PM"];
 
@@ -50,7 +51,8 @@ function TutorRequestCard({ initiallyOpen = false }: { initiallyOpen?: boolean }
   const [sending, setSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const bounds = useMemo(() => dateInputBounds(), []);
-  const timeSlots = form.duration === "60 minutes" ? [...morning60, ...afternoon60] : [...morning45, ...afternoon45];
+  const morningSlots = form.duration === "60 minutes" ? morning60 : morning45;
+  const afternoonSlots = form.duration === "60 minutes" ? afternoon60 : afternoon45;
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -145,9 +147,11 @@ function TutorRequestCard({ initiallyOpen = false }: { initiallyOpen?: boolean }
             <SelectTrigger id="time" className="course-select"><SelectValue placeholder="Choose a time" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="morning-label" disabled>Before school</SelectItem>
-              {timeSlots.filter((time) => time.includes("AM")).map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}
+              {morningSlots.map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}
+              <SelectItem value="school-label" disabled>During school</SelectItem>
+              {schoolDay.map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}
               <SelectItem value="afternoon-label" disabled>After school</SelectItem>
-              {timeSlots.filter((time) => time.includes("PM")).map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}
+              {afternoonSlots.map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}
             </SelectContent>
           </Select>
           {form.duration === "Other" && <p className="field-help">Pick the closest start time and explain the length you need in the final notes.</p>}
