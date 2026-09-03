@@ -26,6 +26,7 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
   const [filter, setFilter] = useState("active");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const isStaff = profile.role !== "tutor";
 
@@ -57,7 +58,7 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
 
   async function changeStatus(status: string) {
     if (!selected || status === selected.status) return;
-    setSaving(true); setError("");
+    setSaving(true); setError(""); setNotice("");
     try {
       const response = await fetch("/api/tutor/requests", {
         method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -77,11 +78,16 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
 
   async function saveSelected() {
     if (!selected) return;
-    setSaving(true); setError("");
+    setSaving(true); setError(""); setNotice("");
     try {
       const response = await fetch("/api/tutor/requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: selected.id, status: selected.status, assignedTutorId: selected.assigned_tutor_id, officerNotes: selected.officer_notes }) });
-      const result = await response.json() as { error?: string };
+      const result = await response.json() as { error?: string; notification?: { status: string; warning?: string } | null };
       if (!response.ok) throw new Error(result.error || "Could not save this session.");
+      if (result.notification?.status === "sent") setNotice("Session saved and the tutor was notified by text.");
+      else if (result.notification?.status === "not_configured") setNotice("Session saved. SMS is ready but still needs the Twilio settings in Vercel.");
+      else if (result.notification?.status === "not_enabled") setNotice("Session saved. This tutor does not have assignment texts enabled.");
+      else if (result.notification?.status === "failed") setNotice(`Session saved, but the text could not be sent${result.notification.warning ? `: ${result.notification.warning}` : "."}`);
+      else setNotice("Session saved.");
       await loadRequests();
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Could not save this session."); }
     finally { setSaving(false); }
@@ -110,7 +116,7 @@ export default function TutorDashboard({ profile }: { profile: TutorProfile }) {
             <label>Status<Select value={selected.status} onValueChange={(value) => void changeStatus(value)} disabled={saving}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(isStaff ? Object.entries(statusLabels) : Object.entries(statusLabels).filter(([value]) => ["confirmed", "completed"].includes(value))).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></label>
             {isStaff && <label>Assigned tutor<Select value={selected.assigned_tutor_id || "unassigned"} onValueChange={(value) => updateLocal("assigned_tutor_id", value === "unassigned" ? null : value)}><SelectTrigger><SelectValue placeholder="Choose a tutor" /></SelectTrigger><SelectContent><SelectItem value="unassigned">Unassigned</SelectItem>{tutors.map((tutor) => <SelectItem key={tutor.id} value={tutor.id}>{tutor.full_name} · @{tutor.username}</SelectItem>)}</SelectContent></Select></label>}
             {isStaff && <label>Officer notes<Textarea value={selected.officer_notes || ""} onChange={(event) => updateLocal("officer_notes", event.target.value)} /></label>}
-            {error && <p className="form-error">{error}</p>}<Button className="nav-cta" onClick={() => void saveSelected()} disabled={saving}>{saving ? "Saving…" : <><Check /> Save session</>}</Button>
+            {error && <p className="form-error">{error}</p>}{notice && <p className="success-message">{notice}</p>}<Button className="nav-cta" onClick={() => void saveSelected()} disabled={saving}>{saving ? "Saving…" : <><Check /> Save session</>}</Button>
           </div>
         </>}</div>
       </section>
