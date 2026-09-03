@@ -22,4 +22,12 @@ After the migration:
 
 The administrator can then add tutors and officers from **Tutor View → Manage tutors**.
 
+## Tutor assignment texts
+
+1. Run `supabase/migrations/0003_tutor_sms.sql` in the Supabase SQL Editor.
+2. Add `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, and `NEXT_PUBLIC_SITE_URL` to the Vercel project environment variables.
+3. In **Manage tutors**, add each tutor's phone number and enable assignment texts only after they agree to receive them.
+
+When an administrator or officer assigns a request to a different tutor and saves it, the assignment remains saved even if the text provider is unavailable. The dashboard reports whether the text was sent.
+
 Never commit `.env.local`, a Supabase secret key, private tutor data, or temporary passwords.
