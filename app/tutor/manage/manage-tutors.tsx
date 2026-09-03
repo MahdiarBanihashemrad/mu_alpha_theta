@@ -13,23 +13,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const subjectOptions = ["Algebra I", "Geometry", "Algebra II", "AP Precalculus", "AP Calculus AB", "AP Calculus BC", "AP Statistics"];
 type Tutor = {
   id: string; username: string; full_name: string; school_email: string; role: string; subjects: string[];
-  active: boolean; must_change_password: boolean; uses_internal_login: boolean;
+  phone: string | null; sms_notifications: boolean; active: boolean; must_change_password: boolean; uses_internal_login: boolean;
 };
 type EditForm = {
   fullName: string; username: string; schoolEmail: string; role: string; subjects: string[];
-  active: boolean; temporaryPassword: string;
+  phone: string; smsNotifications: boolean; active: boolean; temporaryPassword: string;
 };
 
 function editValues(tutor: Tutor): EditForm {
   return {
     fullName: tutor.full_name, username: tutor.username, schoolEmail: tutor.school_email,
+    phone: tutor.phone || "", smsNotifications: tutor.sms_notifications,
     role: tutor.role, subjects: tutor.subjects || [], active: tutor.active, temporaryPassword: "",
   };
 }
 
 export default function ManageTutors() {
   const [tutors, setTutors] = useState<Tutor[]>([]);
-  const [form, setForm] = useState({ fullName: "", username: "", schoolEmail: "", role: "tutor", temporaryPassword: "", subjects: [] as string[] });
+  const [form, setForm] = useState({ fullName: "", username: "", schoolEmail: "", phone: "", smsNotifications: false, role: "tutor", temporaryPassword: "", subjects: [] as string[] });
   const [editing, setEditing] = useState<Tutor | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [deleting, setDeleting] = useState<Tutor | null>(null);
@@ -66,7 +67,7 @@ export default function ManageTutors() {
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error);
       setMessage(`${form.fullName} can now sign in with @${form.username} and their temporary password. No email was sent.`);
-      setForm({ fullName: "", username: "", schoolEmail: "", role: "tutor", temporaryPassword: "", subjects: [] });
+      setForm({ fullName: "", username: "", schoolEmail: "", phone: "", smsNotifications: false, role: "tutor", temporaryPassword: "", subjects: [] });
       await loadTutors();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Could not create tutor.");
@@ -156,6 +157,8 @@ export default function ManageTutors() {
             <label>Access level<Select value={form.role} onValueChange={(role) => setForm({ ...form, role })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="tutor">Tutor</SelectItem><SelectItem value="officer">Officer</SelectItem><SelectItem value="admin">Administrator</SelectItem></SelectContent></Select></label>
           </div>
           <label>School email <span>(optional record only)</span><Input type="email" value={form.schoolEmail} onChange={(event) => setForm({ ...form, schoolEmail: event.target.value })} /></label>
+          <label>Phone number <span>(optional)</span><Input type="tel" autoComplete="tel" placeholder="(512) 555-0123" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+          <label className="active-account"><Checkbox checked={form.smsNotifications} onCheckedChange={(checked) => setForm({ ...form, smsNotifications: Boolean(checked) })} /> Send assignment texts (with tutor permission)</label>
           <p className="account-note">Email is not used for sign-in, verification, or account delivery. Give the tutor their username and password directly.</p>
           <label>Unique temporary password<Input type="password" autoComplete="new-password" value={form.temporaryPassword} onChange={(event) => setForm({ ...form, temporaryPassword: event.target.value })} /></label>
           <p className="password-rules">10+ characters with uppercase, lowercase, a number, and a symbol. The tutor must replace it after signing in.</p>
@@ -172,7 +175,7 @@ export default function ManageTutors() {
             <div className="tutor-roster">{tutors.map((tutor) => (
               <article key={tutor.id} className={!tutor.active ? "inactive" : ""}>
                 <span className="roster-avatar">{tutor.role === "admin" ? <ShieldCheck /> : <UserRound />}</span>
-                <div><strong>{tutor.full_name}</strong><small>@{tutor.username}{tutor.school_email ? ` · ${tutor.school_email}` : ""}</small>{tutor.must_change_password && <em>Temporary password active</em>}</div>
+                <div><strong>{tutor.full_name}</strong><small>@{tutor.username}{tutor.school_email ? ` · ${tutor.school_email}` : ""}</small>{tutor.phone && <small>{tutor.phone} · SMS {tutor.sms_notifications ? "on" : "off"}</small>}{tutor.must_change_password && <em>Temporary password active</em>}</div>
                 <Select value={tutor.role} onValueChange={(role) => void quickUpdate(tutor, { role })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="tutor">Tutor</SelectItem><SelectItem value="officer">Officer</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select>
                 <Button type="button" variant="outline" size="sm" onClick={() => openEditor(tutor)}><Pencil /> Details</Button>
                 <button className="status-toggle" onClick={() => void quickUpdate(tutor, { active: !tutor.active })}>{tutor.active ? "Deactivate" : "Reactivate"}</button>
@@ -195,6 +198,8 @@ export default function ManageTutors() {
                 <label>School email <span>(optional)</span><Input type="email" value={editForm.schoolEmail} onChange={(event) => setEditForm({ ...editForm, schoolEmail: event.target.value })} /></label>
                 <label>Access level<Select value={editForm.role} onValueChange={(role) => setEditForm({ ...editForm, role })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="tutor">Tutor</SelectItem><SelectItem value="officer">Officer</SelectItem><SelectItem value="admin">Administrator</SelectItem></SelectContent></Select></label>
               </div>
+              <label>Phone number <span>(optional)</span><Input type="tel" autoComplete="tel" placeholder="(512) 555-0123" value={editForm.phone} onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })} /></label>
+              <label className="active-account"><Checkbox checked={editForm.smsNotifications} onCheckedChange={(checked) => setEditForm({ ...editForm, smsNotifications: Boolean(checked) })} /> Send assignment texts (with tutor permission)</label>
               <fieldset className="subject-checks"><legend>Subjects they tutor</legend>{subjectOptions.map((subject) => <label key={subject}><Checkbox checked={editForm.subjects.includes(subject)} onCheckedChange={(checked) => setEditForm({ ...editForm, subjects: checked ? [...editForm.subjects, subject] : editForm.subjects.filter((item) => item !== subject) })} />{subject}</label>)}</fieldset>
               <label className="password-reset-label"><KeyRound /> New temporary password <span>(leave blank to keep current password)</span><Input type="password" autoComplete="new-password" value={editForm.temporaryPassword} onChange={(event) => setEditForm({ ...editForm, temporaryPassword: event.target.value })} /></label>
               <label className="active-account"><Checkbox checked={editForm.active} onCheckedChange={(checked) => setEditForm({ ...editForm, active: Boolean(checked) })} /> Account active</label>

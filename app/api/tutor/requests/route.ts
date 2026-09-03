@@ -1,4 +1,5 @@
 import { getCurrentProfile } from "@/lib/auth";
+import { sendAssignmentSms } from "@/lib/sms";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const statuses = new Set(["pending", "assigned", "confirmed", "completed", "declined"]);
@@ -41,9 +42,33 @@ export async function PATCH(request: Request) {
     if (error || !updated) return Response.json({ error: "Could not confirm that the request was saved." }, { status: 500 });
     return Response.json({ ok: true, request: updated });
   } else {
+    if (!["officer", "admin"].includes(profile.role)) return Response.json({ error: "Officer access required." }, { status: 403 });
+    const { data: existing, error: existingError } = await admin.from("tutoring_requests").select("id,assigned_tutor_id,subject,preferred_date,preferred_time").eq("id", id).maybeSingle();
+    if (existingError || !existing) return Response.json({ error: "Tutoring request not found." }, { status: 404 });
+    let assignedTutor: { phone: string | null; sms_notifications: boolean; active: boolean } | null = null;
+    if (assignedTutorId) {
+      const { data } = await admin.from("profiles").select("phone,sms_notifications,active").eq("id", assignedTutorId).maybeSingle();
+      if (!data?.active) return Response.json({ error: "Choose an active tutor account." }, { status: 400 });
+      assignedTutor = data;
+    }
     const nextStatus = assignedTutorId && status === "pending" ? "assigned" : status;
     const { data: updated, error } = await admin.from("tutoring_requests").update({ status: nextStatus, assigned_tutor_id: assignedTutorId, officer_notes: officerNotes || null, updated_at: new Date().toISOString() }).eq("id", id).select("id,status,assigned_tutor_id,officer_notes,updated_at").maybeSingle();
     if (error || !updated) return Response.json({ error: "Could not confirm that the request was saved." }, { status: 500 });
-    return Response.json({ ok: true, request: updated });
+
+    let notification: { status: string; warning?: string } | null = null;
+    if (assignedTutorId && assignedTutorId !== existing.assigned_tutor_id) {
+      if (!assignedTutor?.phone || !assignedTutor.sms_notifications) {
+        notification = { status: "not_enabled" };
+      } else {
+        const sms = await sendAssignmentSms({
+          to: assignedTutor.phone,
+          subject: existing.subject,
+          preferredDate: existing.preferred_date,
+          preferredTime: existing.preferred_time,
+        });
+        notification = sms.status === "failed" ? { status: sms.status, warning: sms.error } : { status: sms.status };
+      }
+    }
+    return Response.json({ ok: true, request: updated, notification });
   }
 }
