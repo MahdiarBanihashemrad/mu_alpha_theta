@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowLeft, KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, KeyRound, Mail, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,6 +40,9 @@ export default function ManageTutors() {
   const [saving, setSaving] = useState(false);
   const [editingSaving, setEditingSaving] = useState(false);
   const [deletingSaving, setDeletingSaving] = useState(false);
+  const activeTutorEmails = useMemo(() => Array.from(new Set(tutors
+    .filter((tutor) => tutor.active && tutor.school_email)
+    .map((tutor) => tutor.school_email))), [tutors]);
 
   const loadTutors = useCallback(async () => {
     setLoading(true); setError("");
@@ -141,6 +144,37 @@ export default function ManageTutors() {
     }
   }
 
+  function emailActiveTutors() {
+    setError(""); setMessage("");
+    if (!activeTutorEmails.length) {
+      setError("Add school email addresses to the active tutor accounts before creating a group email.");
+      return;
+    }
+
+    const loginUrl = `${window.location.origin}/tutor/login`;
+    const subject = "Your Austin High Mu Alpha Theta tutor account";
+    const body = [
+      "Hi everyone,",
+      "",
+      "Your Austin High Mu Alpha Theta tutor account is ready.",
+      "",
+      `1. Open the Tutor View sign-in page: ${loginUrl}`,
+      "2. Sign in with the username and temporary password sent to you separately.",
+      "3. On your first sign-in, you will be required to create a new personal password.",
+      "4. Your new password must have at least 10 characters, including uppercase and lowercase letters, a number, and a symbol.",
+      "5. After changing your password, you will enter Tutor View. Any tutoring requests assigned to you will appear there.",
+      "",
+      "Please do not share your password. If you cannot sign in, reply to me directly for help.",
+      "",
+      "Thank you!",
+      "Austin High Mu Alpha Theta",
+    ].join("\n");
+    const params = new URLSearchParams({ bcc: activeTutorEmails.join(","), subject, body });
+    const missingEmails = tutors.filter((tutor) => tutor.active && !tutor.school_email).length;
+    if (missingEmails) setMessage(`Opened a BCC draft for ${activeTutorEmails.length} accounts. ${missingEmails} active account${missingEmails === 1 ? " is" : "s are"} missing a school email.`);
+    window.location.href = `mailto:?${params.toString()}`;
+  }
+
   return (
     <main className="manage-shell">
       <header>
@@ -168,7 +202,7 @@ export default function ManageTutors() {
         </form>
 
         <div className="tutor-roster-card">
-          <div className="roster-heading"><div><h2>Approved accounts</h2><p>{tutors.length} people</p></div><Button variant="outline" size="icon" onClick={() => void loadTutors()}><RefreshCw /><span className="sr-only">Refresh tutors</span></Button></div>
+          <div className="roster-heading"><div><h2>Approved accounts</h2><p>{tutors.length} people · {activeTutorEmails.length} email-ready</p></div><div className="roster-actions"><Button type="button" variant="outline" size="sm" onClick={emailActiveTutors} disabled={!activeTutorEmails.length}><Mail /> Email active tutors</Button><Button type="button" variant="outline" size="icon" onClick={() => void loadTutors()}><RefreshCw /><span className="sr-only">Refresh tutors</span></Button></div></div>
           {message && <p className="success-message roster-message">{message}</p>}
           {error && <p className="form-error roster-message">{error}</p>}
           {loading ? <p className="dashboard-message">Loading roster…</p> : (
